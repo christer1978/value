@@ -65,7 +65,8 @@ if image_file:
 
             # Anropa gemini-2.5-flash som är optimerad för snabb bildanalys
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.0-flash",
+
                 contents=[img, "Identifiera och värdera objektet på bilden."],
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
