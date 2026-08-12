@@ -18,7 +18,6 @@ st.caption("Ta en bild för att direkt identifiera och värdera objektet.")
 # ------------------------------------------------------------------------------
 # API-NYCKEL
 # ------------------------------------------------------------------------------
-# Läser API-nyckeln från Streamlit Secrets (eller sidopanelen om den saknas)
 api_key = os.environ.get("GEMINI_API_KEY")
 
 with st.sidebar:
@@ -27,24 +26,45 @@ with st.sidebar:
         api_key = st.text_input("Gemini API Key:", type="password")
 
 if not api_key:
-    st.warning("Vänligen ange din Gemini API-nyckel i Secrets (i inställningar) eller i sidopanelen.")
+    st.warning("Vänligen ange din Gemini API-nyckel i Secrets eller i sidopanelen.")
     st.stop()
 
 # Konfigurera Gemini API
 genai.configure(api_key=api_key)
 
 # ------------------------------------------------------------------------------
-# KAMERAINPUT & ANALYS
+# KAMERAINPUT & DYNAMISK ANALYS
 # ------------------------------------------------------------------------------
 image_file = st.camera_input("Ta ett kort på objektet")
 
 if image_file:
     img = Image.open(image_file)
 
-    with st.spinner("Analyserar objektet..."):
+    with st.spinner("Hämtar tillgänglig AI-modell och analyserar..."):
         try:
-            # Använd 'models/gemini-1.5-flash' explicit för att undvika 404
-            model = genai.GenerativeModel("models/gemini-1.5-flash")
+            # 1. Hämta alla tillgängliga modeller för din nyckel
+            available_models = [
+                m.name for m in genai.list_models() 
+                if 'generateContent' in m.supported_generation_methods
+            ]
+
+            # 2. Välj automatiskt den bästa modellen (i första hand en Flash-modell)
+            chosen_model_name = None
+            for m in available_models:
+                if "flash" in m:
+                    chosen_model_name = m
+                    break
+            
+            # Om ingen flash finns, ta den första tillgängliga modellen
+            if not chosen_model_name and available_models:
+                chosen_model_name = available_models[0]
+
+            if not chosen_model_name:
+                st.error("Ingen kompatibel AI-modell hittades på din API-nyckel.")
+                st.stop()
+
+            # 3. Kör analysen med den hittade modellen
+            model = genai.GenerativeModel(chosen_model_name)
 
             prompt = """
             Du är en expert på loppis, antikviteter och secondhand-värdering på den svenska marknaden.
@@ -62,7 +82,7 @@ if image_file:
 
             response = model.generate_content([prompt, img])
 
-            st.success("Analys klar!")
+            st.success(f"Analys klar!")
             st.markdown("---")
             st.markdown(response.text)
 
