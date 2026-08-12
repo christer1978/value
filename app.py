@@ -18,6 +18,7 @@ st.caption("Ta en bild för att direkt identifiera och värdera objektet.")
 # ------------------------------------------------------------------------------
 # API-NYCKEL
 # ------------------------------------------------------------------------------
+# Läser API-nyckeln från Streamlit Secrets (eller sidopanelen om den saknas)
 api_key = os.environ.get("GEMINI_API_KEY")
 
 with st.sidebar:
@@ -26,7 +27,7 @@ with st.sidebar:
         api_key = st.text_input("Gemini API Key:", type="password")
 
 if not api_key:
-    st.warning("Vänligen ange din Gemini API-nyckel i Secrets eller i sidopanelen.")
+    st.warning("Vänligen ange din Gemini API-nyckel i Secrets (i inställningar) eller i sidopanelen.")
     st.stop()
 
 # Konfigurera Gemini API
@@ -40,10 +41,10 @@ image_file = st.camera_input("Ta ett kort på objektet")
 if image_file:
     img = Image.open(image_file)
 
-    with st.spinner("Analyserar objektet och söker marknadsvärden..."):
+    with st.spinner("Analyserar objektet..."):
         try:
-            # Använd den generiska alias-modellen gemini-flash
-            model = genai.GenerativeModel("gemini-flash")
+            # Använd 'models/gemini-1.5-flash' explicit för att undvika 404
+            model = genai.GenerativeModel("models/gemini-1.5-flash")
 
             prompt = """
             Du är en expert på loppis, antikviteter och secondhand-värdering på den svenska marknaden.
